@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="2 видео">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0e0f13">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>2 видео в день</title>
+<style>
+:root{
+  --bg:#0e0f13;--card:#17191f;--card2:#1f222a;--text:#f2f3f5;--mute:#8b909c;--line:#2a2e37;
+  --g:#22c55e;--y:#eab308;--r:#ef4444;--acc:#22c55e;
+}
+@media (prefers-color-scheme:light){
+  :root{--bg:#f4f5f7;--card:#fff;--card2:#eef0f3;--text:#111318;--mute:#6b7280;--line:#e3e5e9}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
+body{padding:calc(env(safe-area-inset-top) + 16px) calc(env(safe-area-inset-right) + 16px)
+  calc(env(safe-area-inset-bottom) + 24px) calc(env(safe-area-inset-left) + 16px)}
+.wrap{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border-radius:22px;padding:18px}
+.top{display:flex;justify-content:space-between;align-items:baseline}
+.label{font-size:13px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.date{font-size:24px;font-weight:700;margin-top:2px}
+.prog{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.prog small{font-size:15px;color:var(--mute);font-weight:500}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.vbtn{appearance:none;border:2px solid var(--line);background:var(--card2);color:var(--text);
+  border-radius:18px;height:118px;font:inherit;font-weight:600;font-size:17px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+  transition:transform .12s ease,background .2s,border-color .2s}
+.vbtn:active{transform:scale(.96)}
+.vbtn .ck{width:38px;height:38px;border-radius:50%;border:2px solid var(--mute);display:grid;place-items:center;transition:.2s}
+.vbtn .ck svg{opacity:0;transform:scale(.5);transition:.2s}
+.vbtn.on{background:color-mix(in srgb,var(--g) 18%,var(--card2));border-color:var(--g)}
+.vbtn.on .ck{background:var(--g);border-color:var(--g)}
+.vbtn.on .ck svg{opacity:1;transform:none}
+.back{display:none;margin-top:12px;width:100%;appearance:none;border:0;background:transparent;color:var(--acc);font:inherit;font-weight:600;padding:6px;cursor:pointer}
+.back.show{display:block}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{background:var(--card);border-radius:18px;padding:14px 12px;text-align:center}
+.stat b{display:block;font-size:26px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--mute)}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.mhead h2{margin:0;font-size:18px;text-transform:capitalize}
+.nav{appearance:none;border:0;background:var(--card2);color:var(--text);width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dow{font-size:11px;color:var(--mute);text-align:center;font-weight:600;padding-bottom:2px}
+.day{aspect-ratio:1;border-radius:11px;display:grid;place-items:center;font-size:14px;font-weight:600;
+  background:var(--card2);color:var(--text);border:2px solid transparent;cursor:pointer;font-variant-numeric:tabular-nums;padding:0;font-family:inherit}
+.day.g{background:var(--g);color:#fff}
+.day.y{background:var(--y);color:#1a1400}
+.day.r{background:var(--r);color:#fff}
+.day.fut{opacity:.55}
+.day.fut.g,.day.fut.y{opacity:.8}
+.day.today{border-color:var(--text)}
+.day.sel{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--acc)}
+.legend{display:flex;gap:14px;justify-content:center;margin-top:14px;font-size:12px;color:var(--mute)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.sync{font-size:12px;color:var(--mute);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="top">
+      <div>
+        <div class="label" id="dlabel">Сегодня</div>
+        <div class="date" id="dtext"></div>
+      </div>
+      <div class="prog" id="prog">0<small>/2</small></div>
+    </div>
+    <div class="btns">
+      <button class="vbtn" data-i="0"><span class="ck"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Видео 1</button>
+      <button class="vbtn" data-i="1"><span class="ck"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>Видео 2</button>
+    </div>
+    <button class="back" id="back">← К сегодняшнему дню</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="sCur">0</b><span>🔥 серия</span></div>
+    <div class="stat"><b id="sBest">0</b><span>рекорд</span></div>
+    <div class="stat"><b id="sAhead">0</b><span>📅 дней наперёд</span></div>
+    <div class="stat"><b id="sMonth">0</b><span>видео за месяц</span></div>
+  </div>
+
+  <div class="card">
+    <div class="mhead">
+      <button class="nav" id="prev" aria-label="Предыдущий месяц">‹</button>
+      <h2 id="mtitle"></h2>
+      <button class="nav" id="next" aria-label="Следующий месяц">›</button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="legend"><span><i style="background:var(--g)"></i>2/2</span><span><i style="background:var(--y)"></i>1/2</span><span><i style="background:var(--r)"></i>0/2</span></div>
+  </div>
+
+  <div class="sync" id="sync">Загрузка…</div>
+</div>
+
+<script>
+const LS = 'twovid.v1';
+let state = { days: {}, start: null, u: 0 };
+try { const s = localStorage.getItem(LS); if (s) state = Object.assign(state, JSON.parse(s)); } catch (e) {}
+
+const pad = n => String(n).padStart(2, '0');
+const key = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const parse = k => { const [a, b, c] = k.split('-').map(Number); return new Date(a, b - 1, c); };
+const todayKey = () => key(new Date());
+const get = k => { const v = state.days[k]; return Array.isArray(v) ? [!!v[0], !!v[1]] : [false, false]; };
+const count = k => { const v = get(k); return v[0] + v[1]; };
+
+let today = todayKey();
+let sel = today;
+let vy = new Date().getFullYear(), vm = new Date().getMonth();
+
+const $ = id => document.getElementById(id);
+const MONTHS = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MONTHS_G = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const DOWS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const WD = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {} }
+
+function toggle(i) {
+  const v = get(sel); v[i] = !v[i];
+  if (!v[0] && !v[1]) delete state.days[sel]; else state.days[sel] = v;
+  if (!state.start || sel < state.start) state.start = sel;
+  state.u = Date.now();
+  saveLocal(); render();
+}
+
+function streaks() {
+  let cur = 0; const d = parse(today);
+  if (count(today) < 2) d.setDate(d.getDate() - 1);
+  while (count(key(d)) === 2) { cur++; d.setDate(d.getDate() - 1); }
+  let best = 0, run = 0, prev = null;
+  Object.keys(state.days).filter(k => count(k) === 2 && k <= today).sort().forEach(k => {
+    if (prev) { const p = parse(prev); p.setDate(p.getDate() + 1); run = key(p) === k ? run + 1 : 1; } else run = 1;
+    if (run > best) best = run; prev = k;
+  });
+  let ahead = 0; const f = parse(today); f.setDate(f.getDate() + 1);
+  while (count(key(f)) === 2) { ahead++; f.setDate(f.getDate() + 1); }
+  return { cur, best: Math.max(best, cur), ahead };
+}
+
+function render() {
+  const sd = parse(sel);
+  $('dlabel').textContent = sel === today ? 'Сегодня' : (sel < today ? 'Исправить день' : 'Наперёд');
+  $('dtext').textContent = sd.getDate() + ' ' + MONTHS_G[sd.getMonth()] + ', ' + WD[sd.getDay()];
+  const v = get(sel);
+  $('prog').innerHTML = (v[0] + v[1]) + '<small>/2</small>';
+  document.querySelectorAll('.vbtn').forEach(b => b.classList.toggle('on', v[+b.dataset.i]));
+  $('back').classList.toggle('show', sel !== today);
+
+  const s = streaks();
+  $('sCur').textContent = s.cur; $('sBest').textContent = s.best; $('sAhead').textContent = s.ahead;
+  const mp = vy + '-' + pad(vm + 1) + '-';
+  $('sMonth').textContent = Object.keys(state.days).filter(k => k.startsWith(mp)).reduce((a, k) => a + count(k), 0);
+
+  $('mtitle').textContent = MONTHS[vm] + ' ' + vy;
+  const g = $('grid'); g.innerHTML = '';
+  DOWS.forEach(d => { const e = document.createElement('div'); e.className = 'dow'; e.textContent = d; g.appendChild(e); });
+  const first = new Date(vy, vm, 1), offset = (first.getDay() + 6) % 7, n = new Date(vy, vm + 1, 0).getDate();
+  for (let i = 0; i < offset; i++) g.appendChild(document.createElement('div'));
+  for (let d = 1; d <= n; d++) {
+    const k = vy + '-' + pad(vm + 1) + '-' + pad(d), c = count(k);
+    const b = document.createElement('button'); b.className = 'day'; b.textContent = d;
+    if (k > today) b.classList.add('fut');
+    if (c === 2) b.classList.add('g');
+    else if (c === 1) b.classList.add('y');
+    else if (k < today && state.start && k >= state.start) b.classList.add('r');
+    if (k === today) b.classList.add('today');
+    if (k === sel) b.classList.add('sel');
+    b.onclick = () => { sel = k; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    g.appendChild(b);
+  }
+}
+
+document.querySelectorAll('.vbtn').forEach(b => b.onclick = () => toggle(+b.dataset.i));
+$('back').onclick = () => { sel = today; const t = new Date(); vy = t.getFullYear(); vm = t.getMonth(); render(); };
+$('prev').onclick = () => { vm--; if (vm < 0) { vm = 11; vy--; } render(); };
+$('next').onclick = () => { vm++; if (vm > 11) { vm = 0; vy++; } render(); };
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  const t = todayKey();
+  if (t !== today) { if (sel === today) sel = t; today = t; const d = new Date(); vy = d.getFullYear(); vm = d.getMonth(); render(); }
+});
+
+render();
+$('sync').textContent='Отметки хранятся на этом iPhone';
+</script>
+</body>
+</html>
